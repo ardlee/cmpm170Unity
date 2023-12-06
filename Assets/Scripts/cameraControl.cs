@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class cameraControl : MonoBehaviour
 {
@@ -22,17 +23,24 @@ public class cameraControl : MonoBehaviour
         Cursor.visible = false;
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
+
     }
 
     void Update()
     {
-        // Rotation
-        float mouseX = Input.GetAxis("Mouse X") * sensitivityX;
-        float mouseY = Input.GetAxis("Mouse Y") * sensitivityY;
-
-        // Only rotate if there is mouse input
-        if (Mathf.Abs(mouseX) > 0 || Mathf.Abs(mouseY) > 0)
+        // Handle Escape key
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
+            ToggleCursorLock();
+        }
+
+        // Only proceed with rotation and movement if the cursor is locked
+        if (Cursor.lockState == CursorLockMode.Locked)
+        {
+            // Rotation
+            float mouseX = Input.GetAxis("Mouse X") * sensitivityX;
+            float mouseY = Input.GetAxis("Mouse Y") * sensitivityY;
+
             xRotation -= mouseY;
             xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
@@ -42,29 +50,44 @@ public class cameraControl : MonoBehaviour
 
             // Rotate the player body horizontally
             playerBody.Rotate(Vector3.up * mouseX);
+
+            // Movement
+            // Get input from the player
+            float horizontalInput = Input.GetAxis("Horizontal");
+            float verticalInput = Input.GetAxis("Vertical");
+
+            // Get the forward and right vectors of the camera
+            Vector3 forward = playerCamera.transform.forward;
+            Vector3 right = playerCamera.transform.right;
+
+            // Project the vectors onto the horizontal plane (y = 0)
+            forward.y = 0f;
+            right.y = 0f;
+
+            // Normalize the vectors to ensure consistent speed in all directions
+            forward.Normalize();
+            right.Normalize();
+
+            // Calculate the movement direction
+            Vector3 movement = (forward * verticalInput + right * horizontalInput);
+
+            // Move the player using Rigidbody
+            rb.MovePosition(rb.position + movement * moveSpeed * Time.deltaTime);
         }
-
-        // Movement
-        // Get input from the player
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
-
-        // Get the forward and right vectors of the camera
-        Vector3 forward = playerCamera.transform.forward;
-        Vector3 right = playerCamera.transform.right;
-
-        // Project the vectors onto the horizontal plane (y = 0)
-        forward.y = 0f;
-        right.y = 0f;
-
-        // Normalize the vectors to ensure consistent speed in all directions
-        forward.Normalize();
-        right.Normalize();
-
-        // Calculate the movement direction
-        Vector3 movement = (forward * verticalInput + right * horizontalInput);
-
-        // Move the player using Rigidbody
-        rb.MovePosition(rb.position + movement * moveSpeed * Time.deltaTime);
     }
+
+    void ToggleCursorLock()
+    {
+        if (Cursor.lockState == CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
 }

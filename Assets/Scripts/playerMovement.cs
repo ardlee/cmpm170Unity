@@ -21,6 +21,7 @@ public class Playermovement : MonoBehaviour
 
     void Update()
     {
+       
 
         if (isGrounded && velocity.y < 0)
         {
